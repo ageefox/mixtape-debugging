@@ -47,3 +47,23 @@ Example: User rates a song.
 - Most business logic is implemented inside the `services` directory.
 - SQLAlchemy models represent the database entities and relationships.
 - The application uses association tables for many-to-many relationships such as friendships, playlist songs, and song tags.
+
+
+---
+## Issue #4: Missing notification when a friend rates a song
+
+### How I reproduced it
+
+I searched for "Midnight" and found "Midnight Drive", which was shared by nova. I rated that song as darius through the `/songs/<song_id>/rate` endpoint. The rating was created successfully, but nova’s notifications only showed the existing playlist notification and did not include a rating notification.
+
+### How I found the root cause
+
+I followed the call chain from `POST /songs/<song_id>/rate` in `routes/songs.py` to `notification_service.rate_song()`. I compared this with the working playlist notification logic. The playlist path explicitly called `create_notification()`, while the rating path saved the rating and returned without creating any notification.
+
+### The root cause
+
+The rating service updated or created a `Rating` record, but never called `create_notification()` for the song owner. Because of that missing step, ratings were stored correctly but did not produce notifications.
+
+### My fix and side-effect check
+
+I added a `create_notification()` call after the rating was committed, but only when the rater is not the song owner. I retested by rating "Midnight Drive" as darius and confirmed nova received a new `song_rated` notification. I also checked that the existing playlist notification still appeared.
