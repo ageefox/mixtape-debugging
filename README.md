@@ -1,56 +1,99 @@
 # Mixtape
 
-A social music app where friends share songs, build collaborative playlists, and track listening stats.
+A social music application where friends can share songs, build collaborative playlists, rate music, and track listening activity.
 
-This is the starter repo for **Project 5: Mixtape Bug Hunt**. The app has five open issues in its tracker. Your job is to find, fix, and document at least three of them.
+### CodePath AI201 · Project 5
+
+Developed as part of CodePath AI201 using a provided Flask application. My work focused on navigating an unfamiliar codebase, reproducing reported bugs, tracing request and service-layer logic, implementing fixes, and documenting root causes.
 
 ---
 
-## App Structure
+## What I Worked On
 
-```
-ai201-project5-mixtape-starter/
-├── app.py                      # Flask app factory and DB setup
-├── models.py                   # SQLAlchemy models for all entities
+I investigated and fixed three issues in the existing application.
+
+### Duplicate Songs in Search Results
+
+Songs associated with multiple tags could appear more than once in search results.
+
+**Root cause:** The SQLAlchemy query joined the `song_tags` association table without removing duplicate `Song` rows.
+
+**Fix:** Added `.distinct()` to the search query so each matching song is returned only once.
+
+### Missing Rating Notifications
+
+Song owners were notified when their song was added to a playlist, but not when another user rated it.
+
+**Root cause:** The rating service created or updated the `Rating` record but did not create a notification for the song owner.
+
+**Fix:** Added notification creation after a successful rating while preventing users from receiving notifications when rating their own songs.
+
+### Last Playlist Song Missing
+
+A playlist containing five songs returned only four.
+
+**Root cause:** The playlist service returned `songs[:-1]`, unintentionally dropping the final song after the database query.
+
+**Fix:** Updated the service to return the complete ordered list of playlist songs.
+
+---
+
+## Debugging Approach
+
+For each issue, I:
+
+1. Reproduced the reported behavior in the application.
+2. Traced the request from the Flask route into the relevant service.
+3. Inspected the database and application logic to identify the root cause.
+4. Implemented a targeted fix.
+5. Verified the corrected behavior and checked for related side effects.
+
+Detailed reproduction steps and debugging notes are available in [`submission.md`](submission.md).
+
+---
+
+## Tech Stack
+
+- Python
+- Flask
+- SQLAlchemy
+- SQLite
+- Pytest
+
+---
+
+## Project Structure
+
+```text
+mixtape/
+├── app.py
+├── models.py
 ├── routes/
-│   ├── songs.py                # Song sharing, search, and rating routes
-│   ├── playlists.py            # Playlist creation and song management
-│   ├── users.py                # User profiles, streaks, notifications
-│   └── feed.py                 # Friends listening now, activity feed
+│   ├── songs.py
+│   ├── playlists.py
+│   ├── users.py
+│   └── feed.py
 ├── services/
-│   ├── streak_service.py       # Listening streak logic
-│   ├── feed_service.py         # Friends listening now feed logic
-│   ├── search_service.py       # Song search logic
-│   ├── notification_service.py # Notification creation and retrieval
-│   └── playlist_service.py     # Playlist retrieval logic
+│   ├── streak_service.py
+│   ├── feed_service.py
+│   ├── search_service.py
+│   ├── notification_service.py
+│   └── playlist_service.py
 ├── tests/
-│   ├── test_streaks.py
-│   ├── test_search.py
-│   └── test_playlists.py
-├── seed_data.py                # Populates DB with test data
-├── requirements.txt
-└── .gitignore
+├── seed_data.py
+├── submission.md
+└── requirements.txt
 ```
-
-The bugs live in the `services/` layer. The routes call services — if something is broken in an endpoint, trace it back to the service it calls.
 
 ---
 
-## Setup
+## Running Locally
 
 Create and activate a virtual environment:
 
 ```bash
 python -m venv .venv
-
-# macOS / Linux
 source .venv/bin/activate
-
-# Windows (Command Prompt)
-.venv\Scripts\activate.bat
-
-# Windows (Git Bash)
-source .venv/Scripts/activate
 ```
 
 Install dependencies:
@@ -59,21 +102,19 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Seed the database with test data:
+Seed the database:
 
 ```bash
 python seed_data.py
 ```
 
-Run the app:
+Run the application:
 
 ```bash
 FLASK_APP=app:create_app flask run
 ```
 
-> **macOS note:** If the app starts but requests hang or return connection refused, try `http://127.0.0.1:5000` instead of `http://localhost:5000`. On macOS, `localhost` sometimes resolves to an IPv6 address that Flask isn't listening on.
-
-Run tests:
+Run the test suite:
 
 ```bash
 pytest tests/
@@ -81,37 +122,6 @@ pytest tests/
 
 ---
 
-## The Five Open Issues
+## CodePath Project Context
 
-| # | Title | Affected service |
-|---|-------|-----------------|
-| 1 | My listening streak keeps resetting | `streak_service.py` |
-| 2 | Friends Listening Now shows people from yesterday | `feed_service.py` |
-| 3 | The same song keeps showing up twice in search | `search_service.py` |
-| 4 | I got notified when a friend added my song to a playlist but not when they rated it | `notification_service.py` |
-| 5 | The last song in a playlist never shows up | `playlist_service.py` |
-
-Full issue descriptions are in the **Project 5 brief**. Read them carefully before opening any service file.
-
----
-
-## How to Read the Code
-
-Start with `models.py` to understand the data model. Then trace a feature through from its route to its service. For example:
-
-- A user rates a song → `POST /songs/<song_id>/rate` → `routes/songs.py` → `notification_service.rate_song()`
-- A user views a playlist → `GET /playlists/<id>/songs` → `routes/playlists.py` → `playlist_service.get_playlist_songs()`
-
-Understanding the full call chain is part of the exercise — don't skip to the service file directly.
-
----
-
-## Submission
-
-Create a branch named `bugfix/mixtape` for your fixes. Each bug fix should be its own commit using conventional format:
-
-```
-fix: correct Sunday boundary condition in streak reset logic
-```
-
-See the project brief for full submission requirements.
+This repository originated from the CodePath AI201 Project 5 starter application. The application architecture and initial codebase were provided; my contribution was the debugging, implementation, verification, and documentation of the fixes described above.
