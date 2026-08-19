@@ -67,3 +67,43 @@ The rating service updated or created a `Rating` record, but never called `creat
 ### My fix and side-effect check
 
 I added a `create_notification()` call after the rating was committed, but only when the rater is not the song owner. I retested by rating "Midnight Drive" as darius and confirmed nova received a new `song_rated` notification. I also checked that the existing playlist notification still appeared.
+
+---
+
+## Issue #3: Duplicate songs in search results
+
+### How I reproduced it
+
+I searched for "Crown Heights" and found that "Crown Heights Anthem," a song associated with multiple tags, could appear more than once in the search results. Songs with one or no tags did not show the same behavior.
+
+### How I found the root cause
+
+I traced the search request to `search_service.search_songs()`. The query joins `Song` to the `song_tags` association table so songs can be returned with their tag relationships. A song associated with multiple tags can produce multiple matching rows through that join, and the query did not explicitly eliminate duplicates.
+
+### The root cause
+
+The search query used an outer join on `song_tags` without applying `DISTINCT`. As a result, a song with multiple tag relationships could be represented multiple times in the query results.
+
+### My fix and side-effect check
+
+I added `.distinct()` to the song query so each matching song is returned only once. I verified that the multi-tag song "Crown Heights Anthem" now appears once and checked that searches for songs with one tag, no tags, and no matching results still behave correctly.
+
+---
+
+## Issue #5: Last song missing from playlist
+
+### How I reproduced it
+
+I retrieved a playlist containing five songs and found that only four were returned. The songs that did appear were in the correct position order, but the final song was consistently missing.
+
+### How I found the root cause
+
+I traced the playlist route to `playlist_service.get_playlist_songs()`. The database query correctly joined the playlist entries, filtered by playlist ID, and sorted the songs by their stored position. The problem occurred after the query: the return statement used `songs[:-1]`.
+
+### The root cause
+
+Python slicing with `songs[:-1]` returns every item except the final one. The database query was retrieving the complete playlist correctly, but the service deliberately dropped the last song while converting the results to dictionaries.
+
+### My fix and side-effect check
+
+I changed the return statement to iterate over the full `songs` list instead of `songs[:-1]`. I verified that a five-song playlist now returns all five songs in position order and that an empty playlist still returns an empty list without error.
