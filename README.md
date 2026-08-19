@@ -65,7 +65,7 @@ Detailed reproduction steps and debugging notes are available in [`submission.md
 ## Project Structure
 
 ```text
-mixtape/
+mixtape-debugging/
 ├── app.py
 ├── models.py
 ├── routes/
@@ -114,11 +114,12 @@ Run the application:
 FLASK_APP=app:create_app flask run
 ```
 
-Run the test suite:
+Run the tests for the fixes implemented in this project:
 
 ```bash
-pytest tests/
+pytest tests/test_search.py tests/test_playlists.py
 ```
+Note: The full starter test suite also includes a listening-streak test for an issue that was not addressed in this project.
 
 ---
 
